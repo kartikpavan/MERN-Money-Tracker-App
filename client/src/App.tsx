@@ -25,7 +25,7 @@ export const App = () => {
    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       const price = name.split(" ")[0];
-      const URL = import.meta.env.VITE_API_URL + "/transaction";
+      const URL = "https://money-tracker-app.onrender.com/api/transaction";
       try {
          setIsloading(true);
          const response = await fetch(URL, {
@@ -54,7 +54,7 @@ export const App = () => {
 
    // Fetch All Transactions
    const fetchAllTransactions = async () => {
-      const URL = import.meta.env.VITE_API_URL + "/transaction";
+      const URL = "https://money-tracker-app.onrender.com/api/transaction";
       try {
          setIsloading(true);
          const response = await fetch(URL);
