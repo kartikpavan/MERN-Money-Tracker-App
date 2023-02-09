@@ -1,5 +1,6 @@
 const Transaction = require("../models/transaction");
 
+// Add Transaction to DB
 const addTransaction = async (req, res) => {
    const { name, date, description, price } = req.body;
    const transaction = await Transaction.create({
@@ -8,7 +9,14 @@ const addTransaction = async (req, res) => {
       date,
       price,
    });
-   res.status(200).json({ msg: transaction });
+   const allTransaction = await Transaction.find();
+   res.status(200).json(allTransaction);
 };
 
-module.exports = { addTransaction };
+// Get All Transaction from DB
+const getAllTransaction = async (req, res) => {
+   const transaction = await Transaction.find();
+   res.status(200).json(transaction);
+};
+
+module.exports = { addTransaction, getAllTransaction };

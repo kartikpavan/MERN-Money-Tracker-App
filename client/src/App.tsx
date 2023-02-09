@@ -1,10 +1,24 @@
 import autoAnimate from "@formkit/auto-animate";
 import React, { useEffect, useRef, useState } from "react";
+import Loader from "./Loader";
+import { formatDate } from "./utils/DateFormatter";
+
+type TransactionProps = {
+   id: string;
+   name: string;
+   price: number;
+   date: string;
+   description: string;
+};
 
 export const App = () => {
    const [name, setName] = useState("");
    const [date, setDate] = useState("");
    const [description, setDescription] = useState("");
+   const [isLoading, setIsloading] = useState(false);
+   const [transactionData, setTransactionData] = useState<TransactionProps[]>(
+      []
+   );
    const parent = useRef(null); // autoanimate ref
 
    // Add transaction
@@ -13,6 +27,7 @@ export const App = () => {
       const price = name.split(" ")[0];
       const URL = import.meta.env.VITE_API_URL + "/transaction";
       try {
+         setIsloading(true);
          const response = await fetch(URL, {
             method: "POST",
             headers: { "Content-type": "application/json" },
@@ -24,26 +39,56 @@ export const App = () => {
             }),
          });
          const data = await response.json();
-         console.log(data);
          setName("");
          setDescription("");
          setDate("");
+         setIsloading(false);
+         setTransactionData(data);
       } catch (error) {
          if (error instanceof Error) {
             console.log(error.message);
+            setIsloading(false);
          }
       }
    };
+
+   // Fetch All Transactions
+   const fetchAllTransactions = async () => {
+      const URL = import.meta.env.VITE_API_URL + "/transaction";
+      try {
+         setIsloading(true);
+         const response = await fetch(URL);
+         const data = await response.json();
+         setTransactionData(data);
+         setIsloading(false);
+      } catch (error) {
+         if (error instanceof Error) console.log(error.message);
+         setIsloading(false);
+      }
+   };
+
+   useEffect(() => {
+      fetchAllTransactions();
+   }, []);
 
    useEffect(() => {
       parent.current && autoAnimate(parent.current);
    }, [parent]);
 
-   const TodayDate = new Date().toDateString();
+   if (isLoading) return <Loader />;
+
+   //Calculating Balance
+   let balance = 0;
+   for (let item of transactionData) {
+      balance = balance + item.price;
+   }
 
    return (
-      <main className="w-11/12 sm:w-9/12 md:9/12 lg:w-8/12 xl:w-1/2 max-w-full mx-auto  border-2 border-red-200">
-         <h1 className="text-4xl font-semibold  my-6 text-center">₹4000</h1>
+      <main className="w-11/12 sm:w-9/12 md:9/12 lg:w-8/12 xl:w-1/2 max-w-full mx-auto ">
+         <h1 className="text-4xl font-semibold  my-6 text-center">
+            ₹{balance}.00
+         </h1>
+         {/* Form */}
          <form action="" className="my-4" onSubmit={handleSubmit}>
             <div className="my-2 flex flex-col sm:flex-row gap-2">
                <div className="w-full">
@@ -83,54 +128,46 @@ export const App = () => {
          </form>
          {/* Transactions List */}
          <div ref={parent}>
-            <div className="flex justify-between my-1 py-1 border-b-2 border-gray-200">
-               {/* left side */}
-               <div className="w-1/2">
-                  <h1 className="text-2xl font-semibold">New Samsung TV</h1>
-                  <p className="text-sm text-gray-500">
-                     I bought a new tv coz old one got very old
-                  </p>
-               </div>
-               {/* Right side */}
-               <div className="w-1/2">
-                  <h1 className="text-2xl font-semibold text-right text-red-500">
-                     - ₹4000
-                  </h1>
-                  <p className="text-lg text-right">{TodayDate}</p>
-               </div>
-            </div>
-            <div className="flex justify-between my-1 py-1 border-b-2 border-gray-200">
-               {/* left side */}
-               <div className="w-1/2">
-                  <h1 className="text-2xl font-semibold">New Samsung TV</h1>
-                  <p className="text-sm text-gray-500">
-                     I bought a new tv coz old one got very old
-                  </p>
-               </div>
-               {/* Right side */}
-               <div className="w-1/2">
-                  <h1 className="text-2xl font-semibold text-right text-green-500">
-                     + ₹4000
-                  </h1>
-                  <p className="text-lg text-right">{TodayDate}</p>
-               </div>
-            </div>
-            <div className="flex justify-between my-1 py-1 border-b-2 border-gray-200">
-               {/* left side */}
-               <div className="w-1/2">
-                  <h1 className="text-2xl font-semibold">New Samsung TV</h1>
-                  <p className="text-sm text-gray-500">
-                     I bought a new tv coz old one got very old
-                  </p>
-               </div>
-               {/* Right side */}
-               <div className="w-1/2">
-                  <h1 className="text-2xl font-semibold text-right text-green-500">
-                     + ₹4000
-                  </h1>
-                  <p className="text-lg text-right">{TodayDate}</p>
-               </div>
-            </div>
+            {!transactionData?.length ? (
+               <h1 className="text-2xl font-serif">No Transaction found!!</h1>
+            ) : (
+               <>
+                  {transactionData?.map((transaction, idx) => {
+                     return (
+                        <div
+                           key={idx}
+                           className="flex justify-between my-1 py-1 border-b-2 border-gray-200"
+                        >
+                           {/* left side */}
+                           <div className="w-1/2">
+                              <h1 className="text-2xl font-semibold">
+                                 {transaction?.name}
+                              </h1>
+                              <p className="text-sm text-gray-500">
+                                 {transaction?.description}
+                              </p>
+                           </div>
+                           {/* Right side */}
+                           <div className="w-1/2">
+                              <h1></h1>
+                              <h1
+                                 className={`text-2xl font-semibold text-right ${
+                                    transaction?.price < 0
+                                       ? "text-red-500"
+                                       : "text-green-600"
+                                 } `}
+                              >
+                                 {transaction?.price}
+                              </h1>
+                              <p className="text-lg text-right">
+                                 {formatDate(transaction?.date)}
+                              </p>
+                           </div>
+                        </div>
+                     );
+                  })}
+               </>
+            )}
          </div>
       </main>
    );
